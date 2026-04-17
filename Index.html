@@ -2,278 +2,133 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>極限開發：卡牌冒險傳說</title>
+    <title>Company Sim Prototype</title>
     <style>
-        :root {
-            --ssr-color: linear-gradient(45deg, #ffd700, #ffae00, #fff3b0);
-            --sr-color: linear-gradient(45deg, #a020f0, #e0b0ff);
-            --r-color: linear-gradient(45deg, #1e90ff, #87cefa);
-            --bg-color: #0f0f1b;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: white;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
-        }
-
-        /* 頂部資訊欄 */
-        .header {
-            width: 100%;
-            padding: 20px;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .stat-box { font-size: 1.2rem; font-weight: bold; color: #ffd700; }
-
-        /* 遊戲主要區塊 */
-        .game-container {
-            max-width: 800px;
-            width: 95%;
-            text-align: center;
-            padding: 20px;
-        }
-
-        /* 卡牌展示區 */
-        #display-area {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            min-height: 250px;
-            margin: 30px 0;
-        }
-
-        /* 卡牌樣式 */
-        .card {
-            width: 120px;
-            height: 180px;
-            border-radius: 10px;
-            position: relative;
-            transform-style: preserve-3d;
-            animation: cardAppear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            padding: 10px;
-            text-align: center;
-            border: 2px solid rgba(255,255,255,0.2);
-        }
-
-        .card.SSR { background: var(--ssr-color); color: #4a3c00; box-shadow: 0 0 20px #ffd700; border: 2px solid #fff; }
-        .card.SR { background: var(--sr-color); color: white; box-shadow: 0 0 15px #a020f0; }
-        .card.R { background: var(--r-color); color: white; }
-
-        .card-rarity { font-size: 0.8rem; position: absolute; top: 10px; left: 10px; opacity: 0.8; }
-        .card-name { font-size: 1rem; }
-
-        /* 按鈕區 */
-        .actions { display: flex; gap: 10px; justify-content: center; margin-bottom: 40px; }
-        button {
-            padding: 12px 25px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: 0.3s;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        .btn-draw { background: #ffd700; color: #333; }
-        .btn-draw:hover { transform: scale(1.1); box-shadow: 0 0 15px #ffd700; }
-        .btn-click { background: #28a745; color: white; }
-
-        /* 背包區域 */
-        .inventory-section {
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        .inv-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .inv-item {
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-        }
-
-        /* 動態效果 */
-        @keyframes cardAppear {
-            0% { transform: translateY(50px) rotateY(90deg); opacity: 0; }
-            100% { transform: translateY(0) rotateY(0deg); opacity: 1; }
-        }
-
-        /* SSR 特效粒子 */
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background-color: #ffd700;
-            z-index: 1000;
-            pointer-events: none;
-        }
+        body { margin: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; }
+        canvas { display: block; background: #333; border: 2px solid #555; margin: 10px auto; }
+        .ui { position: absolute; top: 10px; left: 10px; pointer-events: none; }
+        .info { background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="stat-box">💰 金幣: <span id="gold-val">1000</span></div>
-    <div class="stat-box">💎 已收集: <span id="coll-val">0</span>/12</div>
-    <div class="stat-box">🔥 保底值: <span id="pity-val">0</span></div>
-</div>
-
-<div class="game-container">
-    <h1>LEGENDARY GACHA</h1>
-    <p>試試你的運氣，你能集齊所有 SSR 嗎？</p>
-
-    <div id="display-area">
-        </div>
-
-    <div class="actions">
-        <button class="btn-click" onclick="earnMoney()">💰 點擊賺錢 (+50)</button>
-        <button class="btn-draw" onclick="draw(1, 100)">單抽 (100)</button>
-        <button class="btn-draw" onclick="draw(10, 900)">十連抽 (900)</button>
-    </div>
-
-    <div class="inventory-section">
-        <h3>我的卡庫</h3>
-        <div class="inv-grid" id="inv-grid">
-            </div>
+<div class="ui">
+    <div class="info">
+        <h3>公司模擬原型</h3>
+        <p>員工正在自動尋找設備並提升屬性...</p>
+        <div id="status-board"></div>
     </div>
 </div>
+
+<canvas id="gameCanvas"></canvas>
 
 <script>
-    // 遊戲數據
-    const CARD_POOL = {
-        "SSR": ["蒼穹之神", "冥府渡者", "永恆之心"],
-        "SR": ["雷擊使", "影武者", "潮汐祭司", "聖光騎士"],
-        "R": ["地精", "野兔", "枯樹精", "蝙蝠", "史萊姆"]
-    };
+/**
+ * 核心配置與初始化
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const statusBoard = document.getElementById('status-board');
 
-    let state = JSON.parse(localStorage.getItem('gacha_extreme_save')) || {
-        gold: 1000,
-        inventory: {},
-        pity: 0
-    };
+canvas.width = 800;
+canvas.height = 600;
 
-    // 初始化
-    updateUI();
+// 遊戲資料
+const employees = [];
+const components = [];
 
-    function earnMoney() {
-        state.gold += 50;
-        updateUI();
+// 1. 定義設備類別
+class OfficeComponent {
+    constructor(id, type, x, y, attr) {
+        this.id = id;
+        this.type = type;
+        this.x = x;
+        this.y = y;
+        this.attr = attr; // 提升哪種屬性
+        this.size = 40;
+    }
+    draw() {
+        ctx.fillStyle = this.type === 'PC' ? '#4a90e2' : '#e2a74a';
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.fillStyle = 'white';
+        ctx.fillText(this.type, this.x + 5, this.y + 25);
+    }
+}
+
+// 2. 定義員工類別
+class Employee {
+    constructor(name, x, y) {
+        this.name = name;
+        this.x = x;
+        this.y = y;
+        this.intel = 10;
+        this.target = null;
+        this.speed = 2;
     }
 
-    function draw(times, cost) {
-        if (state.gold < cost) {
-            alert("金幣不足！請多點擊賺錢。");
+    // 尋找目標的邏輯 (這就是你說的"判斷")
+    findTarget() {
+        // 簡單邏輯：找距離最近的設備
+        if (components.length === 0) return;
+        this.target = components[Math.floor(Math.random() * components.length)];
+    }
+
+    update() {
+        if (!this.target) {
+            this.findTarget();
             return;
         }
 
-        state.gold -= cost;
-        const display = document.getElementById('display-area');
-        display.innerHTML = ""; // 清空上次結果
+        // 移動邏輯
+        const dx = this.target.x + 20 - this.x;
+        const dy = this.target.y + 20 - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-        for (let i = 0; i < times; i++) {
-            state.pity++;
-            let rarity = calculateRarity(state.pity);
-            
-            if (rarity === "SSR") {
-                state.pity = 0; // 重置保底
-                createConfetti(); // 灑花慶祝
-            }
-
-            let name = CARD_POOL[rarity][Math.floor(Math.random() * CARD_POOL[rarity].length)];
-            
-            // 加入背包
-            state.inventory[name] = (state.inventory[name] || 0) + 1;
-
-            // 建立卡牌 DOM
-            const cardEl = document.createElement('div');
-            cardEl.className = `card ${rarity}`;
-            cardEl.innerHTML = `
-                <div class="card-rarity">${rarity}</div>
-                <div class="card-name">${name}</div>
-            `;
-            display.appendChild(cardEl);
-        }
-
-        saveGame();
-        updateUI();
-    }
-
-    function calculateRarity(pity) {
-        let chance = Math.random() * 100;
-        // 基本機率：SSR 3%, SR 15%, R 82%
-        // 保底機制：超過 50 抽後，每抽增加 2% SSR 機率
-        let ssrBonus = pity > 50 ? (pity - 50) * 2 : 0;
-        
-        if (chance < (3 + ssrBonus)) return "SSR";
-        if (chance < 18) return "SR";
-        return "R";
-    }
-
-    function updateUI() {
-        document.getElementById('gold-val').innerText = state.gold;
-        document.getElementById('pity-val').innerText = state.pity;
-        
-        const invGrid = document.getElementById('inv-grid');
-        invGrid.innerHTML = "";
-        let count = 0;
-        for (let name in state.inventory) {
-            count++;
-            const item = document.createElement('div');
-            item.className = "inv-item";
-            item.innerText = `${name} x${state.inventory[name]}`;
-            invGrid.appendChild(item);
-        }
-        document.getElementById('coll-val').innerText = count;
-    }
-
-    function saveGame() {
-        localStorage.setItem('gacha_extreme_save', JSON.stringify(state));
-    }
-
-    // SSR 慶祝特效
-    function createConfetti() {
-        for (let i = 0; i < 50; i++) {
-            const confetti = document.createElement('div');
-            confetti.className = 'confetti';
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
-            confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
-            document.body.appendChild(confetti);
-            
-            const animation = confetti.animate([
-                { transform: `translateY(-10vh) rotate(0deg)`, opacity: 1 },
-                { transform: `translateY(100vh) rotate(${Math.random() * 360}deg)`, opacity: 0 }
-            ], { duration: 2000 + Math.random() * 3000 });
-
-            animation.onfinish = () => confetti.remove();
+        if (distance > 5) {
+            this.x += (dx / distance) * this.speed;
+            this.y += (dy / distance) * this.speed;
+        } else {
+            // 到達目標，提升屬性
+            this.intel += 1;
+            this.target = null; // 完成任務，下一個循環會找新目標
         }
     }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#50fa7b';
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.fillText(`${this.name} (IQ:${this.intel})`, this.x - 20, this.y - 15);
+    }
+}
+
+// 初始化資料
+components.push(new OfficeComponent(1, 'PC', 100, 100, 'intel'));
+components.push(new OfficeComponent(2, 'Desk', 600, 400, 'efficiency'));
+components.push(new OfficeComponent(3, 'PC', 100, 400, 'intel'));
+
+employees.push(new Employee('工程師 A', 400, 300));
+employees.push(new Employee('實習生 B', 450, 350));
+
+// 遊戲主迴圈
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 更新與繪製設備
+    components.forEach(c => c.draw());
+
+    // 更新與繪製員工
+    employees.forEach(e => {
+        e.update();
+        e.draw();
+    });
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
 </script>
-
 </body>
 </html>
